@@ -6,23 +6,16 @@ from datetime import datetime
 import uvicorn  # <-- make sure this is installed
 
 app = FastAPI()
-BACKEND_API = "http://localhost:8001"  # Forwarding to another app (can adjust)
+BACKEND_API = "https://itweb2025.onrender.com"  # Forwarding to another app (can adjust)
 
 # Logger setup
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("dpi_proxy")
 
-SUSPICIOUS_PATTERNS = [
-    r"\b(or|and)\b\s+\w+\s*(=|like)",
-    r"(\bselect\b|\bdrop\b|\bunion\b)",
-    r"<\s*script\b[^>]*>",
-    r"data:[^;]+;base64,",
-]
-
 def inspect_payload(content: str) -> bool:
-    for pattern in SUSPICIOUS_PATTERNS:
-        if re.search(pattern, content, re.IGNORECASE):
-            return False
+    # for pattern in SUSPICIOUS_PATTERNS:
+    #     if re.search(pattern, content, re.IGNORECASE):
+    #         return False
     return True
 
 @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
@@ -42,25 +35,26 @@ async def proxy(path: str, request: Request):
         raise HTTPException(status_code=403, detail="Blocked by DPI filter")
 
     headers.pop("host", None)
-    # async with httpx.AsyncClient() as client:
-    #     response = await client.request(
-    #         method=request.method,
-    #         url=f"{BACKEND_API}/{path}",
-    #         headers=headers,
-    #         content=body
-    #     )
-    response = {
-        "content": "Response from backend",
-        "status_code": 200,
-        "headers": {
-            "Content-Type": "application/json",
-            "X-Processed-By": "DPI Proxy"
-        }
-    }
+    async with httpx.AsyncClient() as client:
+        response = await client.request(
+            method=request.method,
+            url=f"{BACKEND_API}",
+            headers=headers,
+            content=body
+        )
+    # response = {
+    #     "content": "Response from backend",
+    #     "status_code": 200,
+    #     "headers": {
+    #         "Content-Type": "application/json",
+    #         "X-Processed-By": "DPI Proxy"
+    #     }
+    # }
+    print(response.content)
     return Response(
-        content="ok",
-        status_code=200,
-        # headers=dict(response.headers),
+        content=response.content,
+        status_code=response.status_code,
+        headers=dict(response.headers),
     )
 
 # Run the API server on port 8000
