@@ -6,7 +6,7 @@ from datetime import datetime
 import uvicorn  # <-- make sure this is installed
 
 app = FastAPI()
-BACKEND_API = "https://itweb2025.onrender.com/dashboard"  # Forwarding to another app (can adjust)
+BACKEND_API = "https://itweb2025.onrender.com/dashboard/"  # Forwarding to another app (can adjust)
 
 # Logger setup
 logging.basicConfig(level=logging.INFO)
